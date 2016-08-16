@@ -1,9 +1,10 @@
 module Main where
 
-import Timeline
+import qualified Data.Text as T
+import           Timeline
 
 main :: IO ()
-main = either renderError print . parseGraphs =<< getContents
+main = either renderError print . parseGraphs . T.pack =<< getContents
 
 renderError :: String -> IO ()
 renderError s = putStrLn $ "Error: " ++ s
