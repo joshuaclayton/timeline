@@ -44,3 +44,16 @@ spec = parallel $
         it "handles when no points are provided in one case but not another" $ do
             let (Left error) = parseGraphs "line:1,2\nbar:"
             error `shouldBe` "Failed reading: Not all graphs had the same length"
+
+        it "supports sma with different values" $ do
+            let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(1)"
+            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 2, 4, 6, 8]]
+
+            let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(2)"
+            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 3, 5, 7]]
+
+            let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(3)"
+            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 2, 4, 6]]
+
+            let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(4)"
+            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 2, 3, 5]]

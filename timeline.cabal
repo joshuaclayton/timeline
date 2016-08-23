@@ -18,6 +18,7 @@ library
   exposed-modules:     Timeline
   other-modules:       Timeline.Types
                      , Timeline.Parser
+                     , Timeline.Statistics
   build-depends:       base >= 4.7 && < 5
                      , attoparsec
                      , text
