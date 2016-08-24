@@ -18,10 +18,12 @@ library
   exposed-modules:     Timeline
   other-modules:       Timeline.Types
                      , Timeline.Parser
+                     , Timeline.Parser.Internal
                      , Timeline.Statistics
   build-depends:       base >= 4.7 && < 5
-                     , attoparsec
+                     , megaparsec >= 5 && < 6
                      , text
+                     , scientific
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
 
