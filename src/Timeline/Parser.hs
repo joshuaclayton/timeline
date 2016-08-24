@@ -64,18 +64,18 @@ smaParser = do
 
 semaParser :: Parser StatisticalAggregate
 semaParser = do
-    duration <- try $ space *> string "+sema" *> parens double
+    alpha <- try $ space *> string "+sema" *> parens double
 
-    if inRange 0 1 duration
-        then return $ SingleExponentialMovingAverage duration
+    if inRange 0 1 alpha
+        then return $ SingleExponentialMovingAverage alpha
         else fail "SEMA alpha value must be between 0 and 1"
 
 demaParser :: Parser StatisticalAggregate
 demaParser = do
-    (a, b) <- try $ space *> string "+dema" *> parens pair
+    (alpha, beta) <- try $ space *> string "+dema" *> parens pair
 
-    case (inRange 0 1 a, inRange 0 1 b) of
-        (True, True) -> return $ DoubleExponentialMovingAverage a b
+    case (inRange 0 1 alpha, inRange 0 1 beta) of
+        (True, True) -> return $ DoubleExponentialMovingAverage alpha beta
         (False, _) -> fail "DEMA alpha value must be between 0 and 1"
         (_, False) -> fail "DEMA beta value must be between 0 and 1"
   where
