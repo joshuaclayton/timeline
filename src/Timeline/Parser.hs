@@ -52,7 +52,7 @@ stackedBarParser = do
 
     if differentListLengths length parsedLists
         then fail "Stacked bar items do not have equal lengths"
-        else return $ StackedBar parsedLists
+        else return $ StackedBarGraph parsedLists
 
 smaParser :: Parser StatisticalAggregate
 smaParser = do

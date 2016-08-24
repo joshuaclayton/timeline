@@ -19,7 +19,7 @@ spec = parallel $
 
         it "parses stacked bar charts" $ do
             let (Right result) = parseGraphs "stacked-bar: [1,2,3],[3,4,5]"
-            result `shouldBe` Graphs [StackedBar [[1, 2, 3], [3, 4, 5]]]
+            result `shouldBe` Graphs [StackedBarGraph [[1, 2, 3], [3, 4, 5]]]
 
         it "parses multiple charts" $ do
             let (Right result) = parseGraphs "bar: 1,2,3\nline: 1,2,3\nbar: 5,5,5\nbar: -5,-5,-5"
@@ -27,11 +27,11 @@ spec = parallel $
 
         it "parses stacked charts in normal order" $ do
             let (Right result) = parseGraphs "stacked-bar: [1,2,3],[4,5,6]\nline: 1,2,3"
-            result `shouldBe` Graphs [StackedBar [[1, 2, 3], [4, 5, 6]], LineGraph [1, 2, 3]]
+            result `shouldBe` Graphs [StackedBarGraph [[1, 2, 3], [4, 5, 6]], LineGraph [1, 2, 3]]
 
         it "parses stacked charts in reverse order" $ do
             let (Right result) = parseGraphs "line: 1,2,3\nstacked-bar: [1,2,3],[4,5,6]"
-            result `shouldBe` Graphs [LineGraph [1, 2, 3], StackedBar [[1, 2, 3], [4, 5, 6]]]
+            result `shouldBe` Graphs [LineGraph [1, 2, 3], StackedBarGraph [[1, 2, 3], [4, 5, 6]]]
 
         it "handles when time series lengths differ" $ do
             let (Left error) = parseGraphs "line: 1,2,3\nline: 1,2"
@@ -43,7 +43,7 @@ spec = parallel $
 
         it "handles when stacked bar series lengths differ" $ do
             let (Left error) = parseGraphs "stacked-bar: [1,2,3],[1,2]"
-            error `shouldContain` "Stacked bar items did not have equal lengths"
+            error `shouldContain` "Stacked bar items do not have equal lengths"
 
         it "handles when no points are provided" $ do
             let (Left error) = parseGraphs "line:\nbar:"
