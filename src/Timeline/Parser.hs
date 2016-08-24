@@ -24,7 +24,7 @@ processResults (g, sas) = g : map (`processGraph` graphValues g) sas
 
 graphsParser :: Parser Graphs
 graphsParser = do
-    graphResults <- concatMap processResults . concat <$> many (graphParser `sepBy1` eol)
+    graphResults <- concatMap processResults <$> graphParser `sepBy1` newline
 
     case (differentListLengths graphLength graphResults, missingPoints graphLength graphResults) of
         (True, _) -> fail "Not all graphs had the same length"

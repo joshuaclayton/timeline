@@ -32,6 +32,6 @@ symbol :: String -> Parser String
 symbol = L.symbol sc
 
 sc :: Parser () -- space consumer
-sc = L.space (void spaceChar) lineComment blockComment
+sc = L.space (void $ char ' ') lineComment blockComment
   where lineComment  = L.skipLineComment "//"
         blockComment = L.skipBlockComment "/*" "*/"
