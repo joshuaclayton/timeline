@@ -32,9 +32,15 @@ rootA = do
     S.addHeader "Access-Control-Allow-Origin" "*"
     S.addHeader "Access-Control-Allow-Methods" "GET, POST"
 
-    either (render422 . TL.pack) (S.text . E.decodeUtf8 . A.encode) . parseGraphs . TL.toStrict . E.decodeUtf8 =<< S.body
+    either displayError renderJSON . parsePostBody =<< S.body
+  where
+    parsePostBody = parseGraphs . TL.toStrict . E.decodeUtf8
+    displayError = render422 . TL.pack
 
 render422 :: TL.Text -> AppAction ()
 render422 t = do
     S.status unprocessableEntity422
-    S.text $ E.decodeUtf8 $ A.encode $ A.object [ "error" A..= t ]
+    renderJSON $ A.object [ "error" A..= t ]
+
+renderJSON :: (Monad m, A.ToJSON a) => a -> S.ActionT TL.Text m ()
+renderJSON = S.text . E.decodeUtf8 . A.encode
