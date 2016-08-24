@@ -51,7 +51,7 @@ stackedBarParser = do
     parsedLists <- chartTypeIntroduction "stacked-bar" *> commaDelimitedLists
 
     if differentListLengths length parsedLists
-        then fail "Stacked bar items did not have equal lengths"
+        then fail "Stacked bar items do not have equal lengths"
         else return $ StackedBar parsedLists
 
 smaParser :: Parser StatisticalAggregate
