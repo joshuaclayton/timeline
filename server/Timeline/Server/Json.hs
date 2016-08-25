@@ -10,6 +10,6 @@ instance ToJSON Graphs where
         object [ "graphs" .= map toJSON gs ]
 
 instance ToJSON TimeSeriesGraph where
-    toJSON (LineGraph is) = object [ "_type" .= String "line", "points" .= map toJSON is ]
-    toJSON (BarGraph is) = object [ "_type" .= String "bar", "points" .= map toJSON is ]
-    toJSON (StackedBarGraph is) = object [ "_type" .= String "stacked-bar", "points" .= map toJSON is ]
+    toJSON (LineGraph n is) = object [ "_type" .= String "line", "name" .= n, "points" .= map toJSON is ]
+    toJSON (BarGraph n is) = object [ "_type" .= String "bar", "name" .= n, "points" .= map toJSON is ]
+    toJSON (StackedBarGraph n is) = object [ "_type" .= String "stacked-bar", "name" .= n, "points" .= map toJSON is ]

@@ -1,8 +1,8 @@
 module Timeline.Parser
-    ( parseGraphs
-    ) where
+    where
 
 import qualified Data.Maybe as M
+import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Text.Megaparsec
@@ -19,40 +19,47 @@ data StatisticalAggregate
 parseGraphs :: Text -> Either String Graphs
 parseGraphs = parseOnly (graphsParser <* eof) . T.strip
 
-processResults :: (TimeSeriesGraph, [StatisticalAggregate]) -> [TimeSeriesGraph]
-processResults (g, sas) = g : map (`processGraph` graphValues g) sas
-
 graphsParser :: Parser Graphs
 graphsParser = do
     graphResults <- concatMap processResults <$> graphParser `sepBy1` newline
 
-    case (differentListLengths graphLength graphResults, missingPoints graphLength graphResults) of
+    let badListLengths = differentListLengths graphLength graphResults
+        noPoints = missingPoints graphLength graphResults
+
+    case (badListLengths, noPoints) of
         (True, _) -> fail "Not all graphs had the same length"
         (_, True) -> fail "No points were provided"
         (_, _) -> return $ Graphs graphResults
   where
     missingPoints f = elem 0 . map f
 
+processResults :: (TimeSeriesGraph, [StatisticalAggregate]) -> [TimeSeriesGraph]
+processResults (g, sas) = g : map (`processGraph` g) sas
+
 graphParser :: Parser (TimeSeriesGraph, [StatisticalAggregate])
 graphParser = do
-    initial <- barParser <|> lineParser <|> stackedBarParser
+    mname <- nameParser
+    initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname
     additional <- many $ smaParser <|> semaParser <|> demaParser
 
     return (initial, additional)
 
-barParser :: Parser TimeSeriesGraph
-barParser = BarGraph <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
+nameParser :: Parser (Maybe Text)
+nameParser = fmap T.pack <$> optional (char '"' *> manyTill anyChar (char '"') <* char ':')
 
-lineParser :: Parser TimeSeriesGraph
-lineParser = LineGraph <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
+barParser :: Maybe Text -> Parser TimeSeriesGraph
+barParser mname = BarGraph mname <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
 
-stackedBarParser :: Parser TimeSeriesGraph
-stackedBarParser = do
+lineParser :: Maybe Text -> Parser TimeSeriesGraph
+lineParser mname = LineGraph mname <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
+
+stackedBarParser :: Maybe Text -> Parser TimeSeriesGraph
+stackedBarParser mname = do
     parsedLists <- chartTypeIntroduction "stacked-bar" *> commaDelimitedLists
 
     if differentListLengths length parsedLists
         then fail "Stacked bar items do not have equal lengths"
-        else return $ StackedBarGraph parsedLists
+        else return $ StackedBarGraph mname parsedLists
 
 smaParser :: Parser StatisticalAggregate
 smaParser = do
@@ -93,10 +100,20 @@ commaDelimitedLists = (space *> brackets commaDelimitedDecimals) `sepBy` char ',
 chartTypeIntroduction :: Text -> Parser ()
 chartTypeIntroduction t = string (T.unpack $ T.snoc t ':') *> space
 
-processGraph :: StatisticalAggregate -> [Double] -> TimeSeriesGraph
-processGraph (SimpleMovingAverage i) = LineGraph . simpleMovingAverage i 0
-processGraph (SingleExponentialMovingAverage d) = LineGraph . map (M.fromMaybe 0 . srSmoothedValue) . srsResults . singleExponential d
-processGraph (DoubleExponentialMovingAverage d1 d2) = LineGraph . map (M.fromMaybe 0 . srSmoothedValue) . srsResults . doubleExponential d1 d2
+processGraph :: StatisticalAggregate -> TimeSeriesGraph -> TimeSeriesGraph
+processGraph sa@(SimpleMovingAverage i) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ simpleMovingAverage i 0 (graphValues g)
+processGraph sa@(SingleExponentialMovingAverage d) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ singleExponential d (graphValues g)
+processGraph sa@(DoubleExponentialMovingAverage d1 d2) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ doubleExponential d1 d2 (graphValues g)
+
+graphName :: TimeSeriesGraph -> Text
+graphName (BarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (LineGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (StackedBarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+
+statisticalAggregateName :: StatisticalAggregate -> Text
+statisticalAggregateName (SimpleMovingAverage i) = "SMA(" <> T.pack (show i) <> ")"
+statisticalAggregateName (SingleExponentialMovingAverage d) = "SEMA(" <> T.pack (show d) <> ")"
+statisticalAggregateName (DoubleExponentialMovingAverage d1 d2) = "DEMA(" <> T.pack (show d1) <> ", " <> T.pack (show d2) <> ")"
 
 inRange :: (Ord a, Num a) => a -> a -> a -> Bool
 inRange min' max' value = value >= min' && value <= max'

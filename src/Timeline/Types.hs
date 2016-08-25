@@ -5,20 +5,22 @@ module Timeline.Types
     , graphValues
     ) where
 
+import Data.Text (Text)
+
 data Graphs = Graphs [TimeSeriesGraph] deriving (Eq, Show)
 
 data TimeSeriesGraph
-    = BarGraph [Double]
-    | LineGraph [Double]
-    | StackedBarGraph [[Double]]
+    = BarGraph (Maybe Text) [Double]
+    | LineGraph (Maybe Text) [Double]
+    | StackedBarGraph (Maybe Text) [[Double]]
     deriving (Eq, Show)
 
 graphLength :: TimeSeriesGraph -> Int
-graphLength (BarGraph a) = length a
-graphLength (LineGraph a) = length a
-graphLength (StackedBarGraph a) = length $ head a
+graphLength (BarGraph _ a) = length a
+graphLength (LineGraph _ a) = length a
+graphLength (StackedBarGraph _ a) = length $ head a
 
 graphValues :: TimeSeriesGraph -> [Double]
-graphValues (BarGraph a) = a
-graphValues (LineGraph a) = a
-graphValues (StackedBarGraph as) = foldl1 (zipWith (+)) as
+graphValues (BarGraph _ a) = a
+graphValues (LineGraph _ a) = a
+graphValues (StackedBarGraph _ as) = foldl1 (zipWith (+)) as

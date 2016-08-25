@@ -11,27 +11,27 @@ spec = parallel $
     describe "parseGraphs" $ do
         it "parses line charts" $ do
             let (Right result) = parseGraphs "line: 1,2.5"
-            result `shouldBe` Graphs [LineGraph [1, 2.5]]
+            result `shouldBe` Graphs [LineGraph Nothing [1, 2.5]]
 
         it "parses bar charts" $ do
             let (Right result) = parseGraphs "bar: 1.2,2"
-            result `shouldBe` Graphs [BarGraph [1.2, 2]]
+            result `shouldBe` Graphs [BarGraph Nothing [1.2, 2]]
 
         it "parses stacked bar charts" $ do
             let (Right result) = parseGraphs "stacked-bar: [1,2,3],[3,4,5]"
-            result `shouldBe` Graphs [StackedBarGraph [[1, 2, 3], [3, 4, 5]]]
+            result `shouldBe` Graphs [StackedBarGraph Nothing [[1, 2, 3], [3, 4, 5]]]
 
         it "parses multiple charts" $ do
             let (Right result) = parseGraphs "bar: 1,2,3\nline: 1,2,3\nbar: 5,5,5\nbar: -5,-5,-5"
-            result `shouldBe` Graphs [BarGraph [1, 2, 3], LineGraph [1, 2, 3], BarGraph [5, 5, 5], BarGraph [-5, -5, -5]]
+            result `shouldBe` Graphs [BarGraph Nothing [1, 2, 3], LineGraph Nothing [1, 2, 3], BarGraph Nothing [5, 5, 5], BarGraph Nothing [-5, -5, -5]]
 
         it "parses stacked charts in normal order" $ do
             let (Right result) = parseGraphs "stacked-bar: [1,2,3],[4,5,6]\nline: 1,2,3"
-            result `shouldBe` Graphs [StackedBarGraph [[1, 2, 3], [4, 5, 6]], LineGraph [1, 2, 3]]
+            result `shouldBe` Graphs [StackedBarGraph Nothing [[1, 2, 3], [4, 5, 6]], LineGraph Nothing [1, 2, 3]]
 
         it "parses stacked charts in reverse order" $ do
             let (Right result) = parseGraphs "line: 1,2,3\nstacked-bar: [1,2,3],[4,5,6]"
-            result `shouldBe` Graphs [LineGraph [1, 2, 3], StackedBarGraph [[1, 2, 3], [4, 5, 6]]]
+            result `shouldBe` Graphs [LineGraph Nothing [1, 2, 3], StackedBarGraph Nothing [[1, 2, 3], [4, 5, 6]]]
 
         it "handles when time series lengths differ" $ do
             let (Left error) = parseGraphs "line: 1,2,3\nline: 1,2"
@@ -55,20 +55,20 @@ spec = parallel $
 
         it "supports sma with different values" $ do
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(1)"
-            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 2, 4, 6, 8]]
+            result `shouldBe` Graphs [LineGraph Nothing [0,2,4,6,8], LineGraph (Just "SMA(1)") [0, 2, 4, 6, 8]]
 
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(2)"
-            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 3, 5, 7]]
+            result `shouldBe` Graphs [LineGraph Nothing [0,2,4,6,8], LineGraph (Just "SMA(2)") [0, 1, 3, 5, 7]]
 
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(3)"
-            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 2, 4, 6]]
+            result `shouldBe` Graphs [LineGraph Nothing [0,2,4,6,8], LineGraph (Just "SMA(3)") [0, 1, 2, 4, 6]]
 
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(4)"
-            result `shouldBe` Graphs [LineGraph [0,2,4,6,8], LineGraph [0, 1, 2, 3, 5]]
+            result `shouldBe` Graphs [LineGraph Nothing [0,2,4,6,8], LineGraph (Just "SMA(4)") [0, 1, 2, 3, 5]]
 
         it "supports sema with different values" $ do
             let (Right (Graphs v)) = parseGraphs "line: 0,2,4,6,8 +sma(2) +sema(0.5) +dema(0.2, 0.3) +sema(0.4) +sma(2) +dema(0.2, 0.1)"
-            head v `shouldBe` LineGraph [0,2,4,6,8]
+            head v `shouldBe` LineGraph Nothing [0,2,4,6,8]
             length v `shouldBe` 7
 
         it "supports sma failure" $ do
@@ -91,4 +91,17 @@ spec = parallel $
 
         it "supports multiple additionals" $ do
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(1) +sma(4)"
-            result `shouldBe` Graphs [LineGraph [0, 2, 4, 6, 8], LineGraph [0, 2, 4, 6, 8], LineGraph [0, 1, 2, 3, 5]]
+            result `shouldBe` Graphs [LineGraph Nothing [0, 2, 4, 6, 8], LineGraph (Just "SMA(1)") [0, 2, 4, 6, 8], LineGraph (Just "SMA(4)") [0, 1, 2, 3, 5]]
+
+        it "allows graphs to be named" $ do
+            let (Right result) = parseGraphs "\"Named Line\":line: 0,2,4,6,8 +sma(1) +sma(4)\nbar: 1,2,3,4,5 +sma(2)\n\"Stacked!\":stacked-bar: [1,2,3,4,5],[6,7,8,9,10] +sma(1)"
+            result `shouldBe`
+                Graphs
+                    [ LineGraph (Just "Named Line") [0, 2, 4, 6, 8]
+                    , LineGraph (Just "Named Line: SMA(1)") [0, 2, 4, 6, 8]
+                    , LineGraph (Just "Named Line: SMA(4)") [0, 1, 2, 3, 5]
+                    , BarGraph Nothing [1, 2, 3, 4, 5]
+                    , LineGraph (Just "SMA(2)") [1, 1.5, 2.5, 3.5, 4.5]
+                    , StackedBarGraph (Just "Stacked!") [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
+                    , LineGraph (Just "Stacked!: SMA(1)") [7, 9, 11, 13, 15]
+                    ]
