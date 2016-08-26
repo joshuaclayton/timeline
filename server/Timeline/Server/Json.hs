@@ -13,3 +13,4 @@ instance ToJSON TimeSeriesGraph where
     toJSON (LineGraph n is) = object [ "_type" .= String "line", "name" .= n, "points" .= map toJSON is ]
     toJSON (BarGraph n is) = object [ "_type" .= String "bar", "name" .= n, "points" .= map toJSON is ]
     toJSON (StackedBarGraph n is) = object [ "_type" .= String "stacked-bar", "name" .= n, "points" .= map toJSON is ]
+    toJSON (ScatterPlotGraph n is) = object [ "_type" .= String "scatter-plot", "name" .= n, "points" .= map toJSON is ]

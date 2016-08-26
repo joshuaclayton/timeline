@@ -21,6 +21,10 @@ spec = parallel $
             let (Right result) = parseGraphs "stacked-bar: [1,2,3],[3,4,5]"
             result `shouldBe` Graphs [StackedBarGraph Nothing [[1, 2, 3], [3, 4, 5]]]
 
+        it "parses scatter plot charts" $ do
+            let (Right result) = parseGraphs "\"Awesome\":scatter-plot: (Red, 5, 1), (Red,5,3), (Blue, 1, 0), (Blue,2,2), (Green, 1.75,4)"
+            result `shouldBe` Graphs [ScatterPlotGraph (Just "Awesome") [("Red", 5, 1), ("Red", 5, 3), ("Blue", 1, 0), ("Blue", 2, 2), ("Green", 1.75, 4)]]
+
         it "parses multiple charts" $ do
             let (Right result) = parseGraphs "bar: 1,2,3\nline: 1,2,3\nbar: 5,5,5\nbar: -5,-5,-5"
             result `shouldBe` Graphs [BarGraph Nothing [1, 2, 3], LineGraph Nothing [1, 2, 3], BarGraph Nothing [5, 5, 5], BarGraph Nothing [-5, -5, -5]]

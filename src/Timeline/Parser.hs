@@ -39,7 +39,7 @@ processResults (g, sas) = g : map (`processGraph` g) sas
 graphParser :: Parser (TimeSeriesGraph, [StatisticalAggregate])
 graphParser = do
     mname <- nameParser
-    initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname
+    initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname <|> scatterPlotParser mname
     additional <- many $ smaParser <|> semaParser <|> demaParser
 
     return (initial, additional)
@@ -52,6 +52,9 @@ barParser mname = BarGraph mname <$> (chartTypeIntroduction "bar" *> commaDelimi
 
 lineParser :: Maybe Text -> Parser TimeSeriesGraph
 lineParser mname = LineGraph mname <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
+
+scatterPlotParser :: Maybe Text -> Parser TimeSeriesGraph
+scatterPlotParser mname = ScatterPlotGraph mname <$> (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
 
 stackedBarParser :: Maybe Text -> Parser TimeSeriesGraph
 stackedBarParser mname = do
@@ -97,6 +100,15 @@ commaDelimitedDecimals = (space *> double) `sepBy` char ','
 commaDelimitedLists :: Parser [[Double]]
 commaDelimitedLists = (space *> brackets commaDelimitedDecimals) `sepBy` char ','
 
+commaDelimitedThreeTuples :: Parser [(Text, Double, Double)]
+commaDelimitedThreeTuples = (space *> parens innerTuple) `sepBy` char ','
+  where
+    innerTuple = do
+      value <- T.pack <$> manyTill anyChar (char ',')
+      p1 <- space *> double <* string ","
+      p2 <- space *> double
+      return (value, p1, p2)
+
 chartTypeIntroduction :: Text -> Parser ()
 chartTypeIntroduction t = string (T.unpack $ T.snoc t ':') *> space
 
@@ -109,6 +121,7 @@ graphName :: TimeSeriesGraph -> Text
 graphName (BarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
 graphName (LineGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
 graphName (StackedBarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (ScatterPlotGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
 
 statisticalAggregateName :: StatisticalAggregate -> Text
 statisticalAggregateName (SimpleMovingAverage i) = "SMA(" <> T.pack (show i) <> ")"
