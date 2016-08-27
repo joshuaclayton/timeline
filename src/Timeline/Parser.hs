@@ -45,7 +45,7 @@ graphParser = do
     return (initial, additional)
 
 nameParser :: Parser (Maybe Text)
-nameParser = fmap T.pack <$> optional (char '"' *> manyTill anyChar (char '"') <* char ':')
+nameParser = fmap T.pack <$> optional (char '"' *> manyTill anyChar (char '"') <* char ':') <* space
 
 barParser :: Maybe Text -> Parser TimeSeriesGraph
 barParser mname = BarGraph mname <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
