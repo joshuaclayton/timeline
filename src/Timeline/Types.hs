@@ -3,9 +3,12 @@ module Timeline.Types
     , TimeSeriesGraph(..)
     , graphLength
     , graphValues
+    , graphName
     ) where
 
-import Data.Text (Text)
+import qualified Data.Maybe as M
+import           Data.Text (Text)
+import qualified Data.Text as T
 
 data Graphs = Graphs [TimeSeriesGraph] deriving (Eq, Show)
 
@@ -27,3 +30,9 @@ graphValues (BarGraph _ a) = a
 graphValues (LineGraph _ a) = a
 graphValues (StackedBarGraph _ as) = foldl1 (zipWith (+)) as
 graphValues (ScatterPlotGraph _ as) = map (\(_, _, y) -> y) as
+
+graphName :: TimeSeriesGraph -> Text
+graphName (BarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (LineGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (StackedBarGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname
+graphName (ScatterPlotGraph mname _) = M.fromMaybe "" $ (`T.append` ": ") <$> mname

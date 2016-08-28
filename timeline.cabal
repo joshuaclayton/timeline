@@ -19,6 +19,8 @@ library
   other-modules:       Timeline.Types
                      , Timeline.Parser
                      , Timeline.Parser.Internal
+                     , Timeline.Parser.Aggregate
+                     , Timeline.Parser.Graph
                      , Timeline.Statistics
   build-depends:       base >= 4.7 && < 5
                      , megaparsec >= 5 && < 6
