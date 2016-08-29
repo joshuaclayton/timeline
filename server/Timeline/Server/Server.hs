@@ -10,7 +10,6 @@ import           Network.HTTP.Types.Status (unprocessableEntity422)
 import qualified Network.Wai.Handler.Warp as W
 import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import           Timeline
-import           Timeline.Server.Json ()
 import qualified Web.Scotty.Trans as S
 
 type AppAction = S.ActionT TL.Text AppConfig
