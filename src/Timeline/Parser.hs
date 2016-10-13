@@ -22,7 +22,7 @@ graphsParser = do
         noPoints = missingPoints graphLength graphResults
 
     case (badListLengths, noPoints) of
-        (True, _) -> fail "Not all graphs had the same length"
+        (True, _) -> fail $ "Not all graphs had the same length: " ++ show (map graphLength graphResults)
         (_, True) -> fail "No points were provided"
         (_, _) -> return $ Graphs graphResults
   where
