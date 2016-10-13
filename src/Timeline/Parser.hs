@@ -34,7 +34,7 @@ processResults (g, sas) = g : map (`statisticalAggregateToTimeSeries` g) sas
 graphParser :: Parser (TimeSeriesGraph, [StatisticalAggregate])
 graphParser = do
     mname <- nameParser
-    initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname <|> scatterPlotParser mname
+    initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname <|> scatterPlotParser mname <|> boxPlotParser mname
     additional <- many $ smaParser <|> semaParser <|> demaParser
 
     return (initial, additional)

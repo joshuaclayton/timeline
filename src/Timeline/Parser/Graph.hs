@@ -3,6 +3,7 @@ module Timeline.Parser.Graph
     , lineParser
     , scatterPlotParser
     , stackedBarParser
+    , boxPlotParser
     ) where
 
 import           Data.Text (Text)
@@ -20,6 +21,21 @@ lineParser mname = LineGraph mname <$> (chartTypeIntroduction "line" *> commaDel
 
 scatterPlotParser :: Maybe Text -> Parser TimeSeriesGraph
 scatterPlotParser mname = ScatterPlotGraph mname <$> (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
+
+boxPlotParser :: Maybe Text -> Parser TimeSeriesGraph
+boxPlotParser mname = do
+    lists <- chartTypeIntroduction "box-plot" *> commaDelimitedLists
+    if all validListLength lists
+        then return $ BoxGraph mname (buildBoxAndWhisker lists)
+        else fail "Box plot members do not contain the correct number of elements"
+  where
+    validListLength xs = null xs || length xs == 5
+
+buildBoxAndWhisker :: [[Double]] -> [Maybe BoxAndWhisker]
+buildBoxAndWhisker = map go
+  where
+    go (low:q1:median:q3:high:_) = Just $ BoxAndWhisker low q1 median q3 high
+    go _ = Nothing
 
 stackedBarParser :: Maybe Text -> Parser TimeSeriesGraph
 stackedBarParser mname = do
