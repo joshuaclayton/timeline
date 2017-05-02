@@ -37,6 +37,10 @@ spec = parallel $
             let (Right result) = parseGraphs "line: 1,2,3\nstacked-bar: [1,2,3],[4,5,6]"
             result `shouldBe` Graphs [LineGraph Nothing [1, 2, 3], StackedBarGraph Nothing [[1, 2, 3], [4, 5, 6]]]
 
+        it "parses box plots" $ do
+            let (Right result) = parseGraphs "box-plot: [1,2,3,10,20], [3,4,7,10,20], [4,5,6,20,25]"
+            result `shouldBe` Graphs [BoxGraph Nothing [Just $ BoxAndWhisker 1 2 3 10 20, Just $ BoxAndWhisker 3 4 7 10 20, Just $ BoxAndWhisker 4 5 6 20 25]]
+
         it "handles when time series lengths differ" $ do
             let (Left error) = parseGraphs "line: 1,2,3\nline: 1,2"
             error `shouldContain` "Not all graphs had the same length"
@@ -48,6 +52,10 @@ spec = parallel $
         it "handles when stacked bar series lengths differ" $ do
             let (Left error) = parseGraphs "stacked-bar: [1,2,3],[1,2]"
             error `shouldContain` "Stacked bar items do not have equal lengths"
+
+        it "handles when box plot lengths are incorrect" $ do
+            let (Left error) = parseGraphs "box-plot: [1,2,3,4,5], [1,2]"
+            error `shouldContain` "Box plot members do not contain the correct number of elements"
 
         it "handles when no points are provided" $ do
             let (Left error) = parseGraphs "line:\nbar:"
