@@ -13,20 +13,20 @@ import           Text.Megaparsec.Text
 import           Timeline.Parser.Internal
 import           Timeline.Types
 
-barParser :: Maybe Text -> Parser TimeSeriesGraph
-barParser mname = BarGraph mname <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
+barParser :: Maybe Text -> Parser Graph
+barParser mname = Graph mname . BarGraph <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
 
-lineParser :: Maybe Text -> Parser TimeSeriesGraph
-lineParser mname = LineGraph mname <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
+lineParser :: Maybe Text -> Parser Graph
+lineParser mname = Graph mname . LineGraph <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
 
-scatterPlotParser :: Maybe Text -> Parser TimeSeriesGraph
-scatterPlotParser mname = ScatterPlotGraph mname <$> (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
+scatterPlotParser :: Maybe Text -> Parser Graph
+scatterPlotParser mname = Graph mname . ScatterPlotGraph <$> (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
 
-boxPlotParser :: Maybe Text -> Parser TimeSeriesGraph
+boxPlotParser :: Maybe Text -> Parser Graph
 boxPlotParser mname = do
     lists <- chartTypeIntroduction "box-plot" *> commaDelimitedLists
     if all validListLength lists
-        then return $ BoxGraph mname (buildBoxAndWhisker lists)
+        then return $ Graph mname (BoxGraph (buildBoxAndWhisker lists))
         else fail "Box plot members do not contain the correct number of elements"
   where
     validListLength xs = null xs || length xs == 5
@@ -37,13 +37,13 @@ buildBoxAndWhisker = map go
     go (low:q1:median:q3:high:_) = Just $ BoxAndWhisker low q1 median q3 high
     go _ = Nothing
 
-stackedBarParser :: Maybe Text -> Parser TimeSeriesGraph
+stackedBarParser :: Maybe Text -> Parser Graph
 stackedBarParser mname = do
     parsedLists <- chartTypeIntroduction "stacked-bar" *> commaDelimitedLists
 
     if differentListLengths length parsedLists
         then fail "Stacked bar items do not have equal lengths"
-        else return $ StackedBarGraph mname parsedLists
+        else return $ Graph mname (StackedBarGraph parsedLists)
 
 chartTypeIntroduction :: Text -> Parser ()
 chartTypeIntroduction t = string (T.unpack $ T.snoc t ':') *> space

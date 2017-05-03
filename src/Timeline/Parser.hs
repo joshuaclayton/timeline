@@ -28,10 +28,10 @@ graphsParser = do
   where
     missingPoints f = elem 0 . map f
 
-processResults :: (TimeSeriesGraph, [StatisticalAggregate]) -> [TimeSeriesGraph]
+processResults :: (Graph, [StatisticalAggregate]) -> [Graph]
 processResults (g, sas) = g : map (`statisticalAggregateToTimeSeries` g) sas
 
-graphParser :: Parser (TimeSeriesGraph, [StatisticalAggregate])
+graphParser :: Parser (Graph, [StatisticalAggregate])
 graphParser = do
     mname <- nameParser
     initial <- barParser mname <|> lineParser mname <|> stackedBarParser mname <|> scatterPlotParser mname <|> boxPlotParser mname

@@ -3,24 +3,12 @@ module Timeline.Parser.Aggregate
     , smaParser
     , semaParser
     , demaParser
-    , statisticalAggregateName
-    , statisticalAggregateToTimeSeries
     ) where
 
-import qualified Data.Maybe as M
-import           Data.Monoid ((<>))
-import           Data.Text (Text)
-import qualified Data.Text as T
-import           Text.Megaparsec
-import           Text.Megaparsec.Text
-import           Timeline.Parser.Internal
-import           Timeline.Statistics
-import           Timeline.Types
-
-data StatisticalAggregate
-    = SimpleMovingAverage Int
-    | SingleExponentialMovingAverage Double
-    | DoubleExponentialMovingAverage Double Double
+import Text.Megaparsec
+import Text.Megaparsec.Text
+import Timeline.Parser.Internal
+import Timeline.Types
 
 smaParser :: Parser StatisticalAggregate
 smaParser = do
@@ -51,12 +39,3 @@ demaParser = do
         p2 <- space *> double
         return (p1, p2)
 
-statisticalAggregateName :: StatisticalAggregate -> Text
-statisticalAggregateName (SimpleMovingAverage i) = "SMA(" <> T.pack (show i) <> ")"
-statisticalAggregateName (SingleExponentialMovingAverage d) = "SEMA(" <> T.pack (show d) <> ")"
-statisticalAggregateName (DoubleExponentialMovingAverage d1 d2) = "DEMA(" <> T.pack (show d1) <> ", " <> T.pack (show d2) <> ")"
-
-statisticalAggregateToTimeSeries :: StatisticalAggregate -> TimeSeriesGraph -> TimeSeriesGraph
-statisticalAggregateToTimeSeries sa@(SimpleMovingAverage i) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ simpleMovingAverage i 0 (graphValues g)
-statisticalAggregateToTimeSeries sa@(SingleExponentialMovingAverage d) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ singleExponential d (graphValues g)
-statisticalAggregateToTimeSeries sa@(DoubleExponentialMovingAverage d1 d2) g = LineGraph (Just $ graphName g <> statisticalAggregateName sa) $ map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ doubleExponential d1 d2 (graphValues g)
