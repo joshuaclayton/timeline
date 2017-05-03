@@ -44,6 +44,11 @@ data BoxAndWhisker = BoxAndWhisker
     , bawHigh :: Double
     } deriving (Eq, Show)
 
+instance Show StatisticalAggregate where
+    show (SimpleMovingAverage i) = "SMA(" ++ show i ++ ")"
+    show (SingleExponentialMovingAverage d) = "SEMA(" ++ show d ++ ")"
+    show (DoubleExponentialMovingAverage d1 d2) = "DEMA(" ++ show d1 ++ ", " ++ show d2 ++ ")"
+
 instance ToJSON Graphs where
     toJSON (Graphs gs) =
         object [ "graphs" .= map toJSON gs ]
@@ -91,11 +96,6 @@ graphType (StackedBarGraph _) = "stacked-bar"
 graphType (ScatterPlotGraph _) = "scatter-plot"
 graphType (BoxGraph _) = "box-plot"
 
-statisticalAggregateName :: StatisticalAggregate -> Text
-statisticalAggregateName (SimpleMovingAverage i) = "SMA(" <> T.pack (show i) <> ")"
-statisticalAggregateName (SingleExponentialMovingAverage d) = "SEMA(" <> T.pack (show d) <> ")"
-statisticalAggregateName (DoubleExponentialMovingAverage d1 d2) = "DEMA(" <> T.pack (show d1) <> ", " <> T.pack (show d2) <> ")"
-
 aggToSeries :: StatisticalAggregate -> Graph -> [Double]
 aggToSeries (SimpleMovingAverage i) g = simpleMovingAverage i 0 (graphValues g)
 aggToSeries (SingleExponentialMovingAverage d) g = map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ singleExponential d (graphValues g)
@@ -104,5 +104,5 @@ aggToSeries (DoubleExponentialMovingAverage d1 d2) g = map (M.fromMaybe 0 . srSm
 statisticalAggregateToTimeSeries :: StatisticalAggregate -> Graph -> Graph
 statisticalAggregateToTimeSeries sa g = Graph gname graph
   where
-    gname = Just $ graphName g <> statisticalAggregateName sa
+    gname = Just $ graphName g <> T.pack (show sa)
     graph = LineGraph $ aggToSeries sa g
