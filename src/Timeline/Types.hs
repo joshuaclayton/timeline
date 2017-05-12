@@ -5,19 +5,14 @@ module Timeline.Types
     , Graph(..)
     , TimeSeriesGraph(..)
     , BoxAndWhisker(..)
-    , StatisticalAggregate(..)
     , graphLength
     , graphValues
     , graphName
-    , statisticalAggregateToTimeSeries
     ) where
 
 import           Data.Aeson
-import qualified Data.Maybe as M
-import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Timeline.Statistics
 
 data Graphs = Graphs [Graph] deriving (Eq, Show)
 
@@ -31,11 +26,6 @@ data TimeSeriesGraph
     | BoxGraph [Maybe BoxAndWhisker]
     deriving (Eq, Show)
 
-data StatisticalAggregate
-    = SimpleMovingAverage Int
-    | SingleExponentialMovingAverage Double
-    | DoubleExponentialMovingAverage Double Double
-
 data BoxAndWhisker = BoxAndWhisker
     { bawLow :: Double
     , bawQ1 :: Double
@@ -43,11 +33,6 @@ data BoxAndWhisker = BoxAndWhisker
     , bawQ3 :: Double
     , bawHigh :: Double
     } deriving (Eq, Show)
-
-instance Show StatisticalAggregate where
-    show (SimpleMovingAverage i) = "SMA(" ++ show i ++ ")"
-    show (SingleExponentialMovingAverage d) = "SEMA(" ++ show d ++ ")"
-    show (DoubleExponentialMovingAverage d1 d2) = "DEMA(" ++ show d1 ++ ", " ++ show d2 ++ ")"
 
 instance ToJSON Graphs where
     toJSON (Graphs gs) =
@@ -95,14 +80,3 @@ graphType (LineGraph _) = "line"
 graphType (StackedBarGraph _) = "stacked-bar"
 graphType (ScatterPlotGraph _) = "scatter-plot"
 graphType (BoxGraph _) = "box-plot"
-
-aggToSeries :: StatisticalAggregate -> Graph -> [Double]
-aggToSeries (SimpleMovingAverage i) g = simpleMovingAverage i 0 (graphValues g)
-aggToSeries (SingleExponentialMovingAverage d) g = map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ singleExponential d (graphValues g)
-aggToSeries (DoubleExponentialMovingAverage d1 d2) g = map (M.fromMaybe 0 . srSmoothedValue) $ srsResults $ doubleExponential d1 d2 (graphValues g)
-
-statisticalAggregateToTimeSeries :: StatisticalAggregate -> Graph -> Graph
-statisticalAggregateToTimeSeries sa g = Graph gname graph
-  where
-    gname = Just $ graphName g <> T.pack (show sa)
-    graph = LineGraph $ aggToSeries sa g

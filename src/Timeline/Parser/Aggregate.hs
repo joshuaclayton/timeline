@@ -1,41 +1,42 @@
 module Timeline.Parser.Aggregate
-    ( StatisticalAggregate(..)
-    , smaParser
+    ( smaParser
     , semaParser
     , demaParser
     ) where
 
-import Text.Megaparsec
-import Text.Megaparsec.Text
-import Timeline.Parser.Internal
-import Timeline.Types
+import           Data.Monoid ((<>))
+import qualified Data.MovingAverage as MA
+import qualified Data.Text as T
+import           Text.Megaparsec
+import           Text.Megaparsec.Text
+import           Timeline.Parser.Internal
+import           Timeline.Types
 
-smaParser :: Parser StatisticalAggregate
-smaParser = do
-    duration <- try $ space *> string "+sma" *> parens double
+smaParser :: Graph -> Parser Graph
+smaParser g = do
+    i <- try $ space *> string "+sma" *> parens int
+    build g $ MA.simple i (graphValues g)
 
-    if duration > 0
-        then return $ SimpleMovingAverage $ round duration
-        else fail "SMA window must be greater than zero"
-
-semaParser :: Parser StatisticalAggregate
-semaParser = do
+semaParser :: Graph -> Parser Graph
+semaParser g = do
     alpha <- try $ space *> string "+sema" *> parens double
-    if inRange 0 1 alpha
-        then return $ SingleExponentialMovingAverage alpha
-        else fail "SEMA alpha value must be between 0 and 1"
+    build g $ MA.singleExponential alpha (graphValues g)
 
-demaParser :: Parser StatisticalAggregate
-demaParser = do
+demaParser :: Graph -> Parser Graph
+demaParser g = do
     (alpha, beta) <- try $ space *> string "+dema" *> parens pair
-
-    case (inRange 0 1 alpha, inRange 0 1 beta) of
-        (True, True) -> return $ DoubleExponentialMovingAverage alpha beta
-        (False, _) -> fail "DEMA alpha value must be between 0 and 1"
-        (_, False) -> fail "DEMA beta value must be between 0 and 1"
+    build g $ MA.doubleExponential alpha beta (graphValues g)
   where
     pair = do
         p1 <- double <* comma
         p2 <- space *> double
         return (p1, p2)
 
+build :: Graph -> Either MA.MovingAverageError (MA.SmoothedResults Double) -> Parser Graph
+build g =
+    either failWithError buildGraph
+  where
+    failWithError = fail . show
+    buildGraph res = return $ Graph (gname res) $ LineGraph $ resultValues res
+    gname res = Just $ graphName g <> T.pack (show $ MA.srsGraphType res)
+    resultValues = map MA.srSmoothedValue . MA.srsResults

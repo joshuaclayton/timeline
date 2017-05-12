@@ -1,5 +1,6 @@
 module Timeline.Parser.Internal
     ( parseOnly
+    , int
     , double
     , comma
     , brackets
@@ -21,6 +22,11 @@ parseOnly p = BF.first parseErrorPretty . runParser p ""
 
 double :: Parser Double
 double = L.signed sc $ toRealFloat <$> lexeme L.number
+
+int :: Parser Int
+int = fromInteger <$> L.signed sc integer
+  where
+    integer = lexeme L.integer
 
 comma :: Parser Char
 comma = char ','

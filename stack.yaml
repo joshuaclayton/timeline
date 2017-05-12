@@ -41,6 +41,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - megaparsec-5.0.1
+- moving-averages-0.2.0.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}

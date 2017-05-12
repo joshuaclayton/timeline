@@ -16,7 +16,7 @@ parseGraphs = parseOnly (graphsParser <* eof) . T.strip
 
 graphsParser :: Parser Graphs
 graphsParser = do
-    graphResults <- concatMap processResults <$> graphAndAggregatesParser `sepBy1` newline
+    graphResults <- concat <$> graphAndAggregatesParser `sepBy1` newline
 
     let badListLengths = differentListLengths graphLength graphResults
         noPoints = missingPoints graphLength graphResults
@@ -28,15 +28,12 @@ graphsParser = do
   where
     missingPoints f = elem 0 . map f
 
-processResults :: (Graph, [StatisticalAggregate]) -> [Graph]
-processResults (g, sas) = g : map (`statisticalAggregateToTimeSeries` g) sas
-
-graphAndAggregatesParser :: Parser (Graph, [StatisticalAggregate])
+graphAndAggregatesParser :: Parser [Graph]
 graphAndAggregatesParser = do
     initial <- graphParser
-    additional <- many $ smaParser <|> semaParser <|> demaParser
+    additional <- many $ choice [smaParser initial, semaParser initial, demaParser initial]
 
-    return (initial, additional)
+    return (initial : additional)
 
 graphParser :: Parser Graph
 graphParser = Graph

@@ -85,21 +85,24 @@ spec = parallel $
 
         it "supports sma failure" $ do
             let (Left error) = parseGraphs "line: 1,2 +sma(0)"
-            error `shouldContain` "SMA window must be greater than zero"
+            error `shouldContain` "Window must be greater than 0"
+
+            let (Left error) = parseGraphs "line: 1,2 +sma(-2)"
+            error `shouldContain` "Window must be greater than 0"
 
         it "supports sema failure" $ do
             let (Left error) = parseGraphs "line: 1,2 +sema(2)"
-            error `shouldContain` "SEMA alpha value must be between 0 and 1"
+            error `shouldContain` "Alpha must be 0 <= a <= 1"
 
             let (Left error') = parseGraphs "line: 1,2 +sema(-1)"
-            error' `shouldContain` "SEMA alpha value must be between 0 and 1"
+            error' `shouldContain` "Alpha must be 0 <= a <= 1"
 
         it "supports dema failure" $ do
             let (Left error) = parseGraphs "line: 1,2 +dema(2, 0.5)"
-            error `shouldContain` "DEMA alpha value must be between 0 and 1"
+            error `shouldContain` "Alpha must be 0 < a < 1"
 
             let (Left error') = parseGraphs "line: 1,2 +dema(0.5, -1)"
-            error' `shouldContain` "DEMA beta value must be between 0 and 1"
+            error' `shouldContain` "Beta must be 0 < b < 1"
 
         it "supports multiple additionals" $ do
             let (Right result) = parseGraphs "line: 0,2,4,6,8 +sma(1) +sma(4)"

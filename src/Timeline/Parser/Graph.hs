@@ -62,4 +62,3 @@ commaDelimitedThreeTuples = (space *> parens innerTuple) `sepBy` comma
       p1 <- space *> double <* comma
       p2 <- space *> double
       return (value, p1, p2)
-
