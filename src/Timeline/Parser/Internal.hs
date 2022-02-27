@@ -1,21 +1,21 @@
 module Timeline.Parser.Internal
-    ( parseOnly
-    , int
-    , double
-    , comma
-    , brackets
-    , parens
-    , inRange
-    , differentListLengths
-    ) where
+  ( parseOnly
+  , int
+  , double
+  , comma
+  , brackets
+  , parens
+  , inRange
+  , differentListLengths
+  ) where
 
-import           Control.Monad (void)
+import Control.Monad (void)
 import qualified Data.Bifunctor as BF
-import           Data.Scientific (toRealFloat)
-import           Data.Text (Text)
-import           Text.Megaparsec
+import Data.Scientific (toRealFloat)
+import Data.Text (Text)
+import Text.Megaparsec
 import qualified Text.Megaparsec.Lexer as L
-import           Text.Megaparsec.Text
+import Text.Megaparsec.Text
 
 parseOnly :: Parser a -> Text -> Either String a
 parseOnly p = BF.first parseErrorPretty . runParser p ""
@@ -51,5 +51,6 @@ symbol = L.symbol sc
 
 sc :: Parser () -- space consumer
 sc = L.space (void $ char ' ') lineComment blockComment
-  where lineComment  = L.skipLineComment "//"
-        blockComment = L.skipBlockComment "/*" "*/"
+  where
+    lineComment = L.skipLineComment "//"
+    blockComment = L.skipBlockComment "/*" "*/"

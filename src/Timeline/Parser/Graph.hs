@@ -1,33 +1,36 @@
 module Timeline.Parser.Graph
-    ( barParser
-    , lineParser
-    , scatterPlotParser
-    , stackedBarParser
-    , boxPlotParser
-    ) where
+  ( barParser
+  , lineParser
+  , scatterPlotParser
+  , stackedBarParser
+  , boxPlotParser
+  ) where
 
-import           Data.Text (Text)
+import Data.Text (Text)
 import qualified Data.Text as T
-import           Text.Megaparsec
-import           Text.Megaparsec.Text
-import           Timeline.Parser.Internal
-import           Timeline.Types
+import Text.Megaparsec
+import Text.Megaparsec.Text
+import Timeline.Parser.Internal
+import Timeline.Types
 
 barParser :: Parser TimeSeriesGraph
 barParser = BarGraph <$> (chartTypeIntroduction "bar" *> commaDelimitedDecimals)
 
 lineParser :: Parser TimeSeriesGraph
-lineParser = LineGraph <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
+lineParser =
+  LineGraph <$> (chartTypeIntroduction "line" *> commaDelimitedDecimals)
 
 scatterPlotParser :: Parser TimeSeriesGraph
-scatterPlotParser = ScatterPlotGraph <$> (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
+scatterPlotParser =
+  ScatterPlotGraph <$>
+  (chartTypeIntroduction "scatter-plot" *> commaDelimitedThreeTuples)
 
 boxPlotParser :: Parser TimeSeriesGraph
 boxPlotParser = do
-    lists <- chartTypeIntroduction "box-plot" *> commaDelimitedLists
-    if all validListLength lists
-        then return $ BoxGraph (buildBoxAndWhisker lists)
-        else fail "Box plot members do not contain the correct number of elements"
+  lists <- chartTypeIntroduction "box-plot" *> commaDelimitedLists
+  if all validListLength lists
+    then return $ BoxGraph (buildBoxAndWhisker lists)
+    else fail "Box plot members do not contain the correct number of elements"
   where
     validListLength xs = null xs || length xs == 5
 
@@ -39,11 +42,10 @@ buildBoxAndWhisker = map go
 
 stackedBarParser :: Parser TimeSeriesGraph
 stackedBarParser = do
-    parsedLists <- chartTypeIntroduction "stacked-bar" *> commaDelimitedLists
-
-    if differentListLengths length parsedLists
-        then fail "Stacked bar items do not have equal lengths"
-        else return $ StackedBarGraph parsedLists
+  parsedLists <- chartTypeIntroduction "stacked-bar" *> commaDelimitedLists
+  if differentListLengths length parsedLists
+    then fail "Stacked bar items do not have equal lengths"
+    else return $ StackedBarGraph parsedLists
 
 chartTypeIntroduction :: Text -> Parser ()
 chartTypeIntroduction t = string (T.unpack $ T.snoc t ':') *> space

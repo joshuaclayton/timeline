@@ -1,52 +1,62 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Timeline.Types
-    ( Graphs(..)
-    , Graph(..)
-    , TimeSeriesGraph(..)
-    , BoxAndWhisker(..)
-    , graphLength
-    , graphValues
-    , graphName
-    ) where
+  ( Graphs(..)
+  , Graph(..)
+  , TimeSeriesGraph(..)
+  , BoxAndWhisker(..)
+  , graphLength
+  , graphValues
+  , graphName
+  ) where
 
-import           Data.Aeson
-import           Data.Text (Text)
+import Data.Aeson
+import Data.Text (Text)
 import qualified Data.Text as T
 
-data Graphs = Graphs [Graph] deriving (Eq, Show)
+newtype Graphs =
+  Graphs [Graph]
+  deriving (Eq, Show)
 
-data Graph = Graph (Maybe Text) TimeSeriesGraph deriving (Eq, Show)
+data Graph =
+  Graph (Maybe Text)
+        TimeSeriesGraph
+  deriving (Eq, Show)
 
 data TimeSeriesGraph
-    = BarGraph [Double]
-    | LineGraph [Double]
-    | StackedBarGraph [[Double]]
-    | ScatterPlotGraph [(Text, Double, Double)]
-    | BoxGraph [Maybe BoxAndWhisker]
-    deriving (Eq, Show)
+  = BarGraph [Double]
+  | LineGraph [Double]
+  | StackedBarGraph [[Double]]
+  | ScatterPlotGraph [(Text, Double, Double)]
+  | BoxGraph [Maybe BoxAndWhisker]
+  deriving (Eq, Show)
 
 data BoxAndWhisker = BoxAndWhisker
-    { bawLow :: Double
-    , bawQ1 :: Double
-    , bawMedian :: Double
-    , bawQ3 :: Double
-    , bawHigh :: Double
-    } deriving (Eq, Show)
+  { bawLow :: Double
+  , bawQ1 :: Double
+  , bawMedian :: Double
+  , bawQ3 :: Double
+  , bawHigh :: Double
+  } deriving (Eq, Show)
 
 instance ToJSON Graphs where
-    toJSON (Graphs gs) =
-        object [ "graphs" .= map toJSON gs ]
+  toJSON (Graphs gs) = object ["graphs" .= map toJSON gs]
 
 instance ToJSON Graph where
-    toJSON (Graph n g) =
-        object [ "_type" .= String (graphType g), "name" .= n, "points" .= map toJSON (graphValues' g) ]
+  toJSON (Graph n g) =
+    object
+      [ "_type" .= String (graphType g)
+      , "name" .= n
+      , "points" .= map toJSON (graphValues' g)
+      ]
 
-instance {-# OVERLAPPING #-} ToJSON (Maybe BoxAndWhisker) where
-    toJSON = toJSON . extract
-      where
-        extract (Just (BoxAndWhisker low q1 median q3 high)) = [low, q1, median, q3, high]
-        extract Nothing = []
+extract (Just (BoxAndWhisker low q1 median q3 high)) =
+  [low, q1, median, q3, high]
+extract Nothing = []
+
+instance ToJSON (Maybe BoxAndWhisker) {-# OVERLAPPING #-}
+                                                          where
+  toJSON = toJSON . extract
 
 graphLength :: Graph -> Int
 graphLength (Graph _ g) = graphLength' g
